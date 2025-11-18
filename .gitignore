@@ -1,0 +1,12 @@
+.venv
+.coverage
+.cache
+.pytest_cache
+temp
+./vscode
+.vscode
+.vscode/*
+.idea
+.env
+.python-version
+.DS_Store
