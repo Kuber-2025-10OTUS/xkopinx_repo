@@ -10,3 +10,5 @@ temp
 .env
 .python-version
 .DS_Store
+token
+*txt*
