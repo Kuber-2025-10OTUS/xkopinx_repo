@@ -1,5 +1,28 @@
 # План проверки работоспособности
 
+## Шаг 0: Установка metrics-server
+
+```bash
+# Проверить, установлен ли metrics-server
+kubectl get pods -n kube-system | grep metrics-server
+kubectl get apiservice | grep metrics.k8s.io
+
+# Если metrics-server не установлен, установить его:
+
+# Для minikube:
+minikube addons enable metrics-server
+
+# Для других кластеров (Kubernetes 1.24+):
+kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
+
+# Проверить, что metrics-server запущен
+kubectl wait --for=condition=ready pod -l k8s-app=metrics-server -n kube-system --timeout=60s
+
+# Проверить доступность Metrics API
+kubectl get --raw /apis/metrics.k8s.io/v1beta1/nodes
+# Должен вернуть JSON с метриками узлов (или пустой список, если узлов нет)
+```
+
 ## Шаг 1: Применение кластерных ресурсов (требуют права администратора)
 
 ```bash
