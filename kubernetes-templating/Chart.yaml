@@ -1,0 +1,11 @@
+apiVersion: v2
+name: homework-chart
+description: A Helm chart for homework application
+type: application
+version: 0.1.0
+appVersion: "1.0.0"
+dependencies:
+  - name: mysql
+    version: 14.0.3
+    repository: https://charts.bitnami.com/bitnami
+    condition: mysql.enabled
