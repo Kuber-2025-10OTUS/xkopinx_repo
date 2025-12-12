@@ -1,0 +1,151 @@
+# Default values for homework-chart
+# This is a YAML-formatted file.
+
+# Application name
+nameOverride: ""
+fullnameOverride: ""
+
+# Namespace
+namespace:
+  name: homework
+  create: true
+
+# Deployment configuration
+deployment:
+  replicas: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+
+# Container images
+image:
+  repository: python
+  tag: "3.9-slim"
+  pullPolicy: IfNotPresent
+
+initContainer:
+  image:
+    repository: busybox
+    tag: "latest"
+    pullPolicy: IfNotPresent
+
+# Container configuration
+container:
+  name: web-server
+  port: 8000
+  command: ['sh', '-c']
+  args:
+    - |
+      cd /homework
+      python3 -m http.server 8000
+
+# Probes configuration
+probes:
+  enabled: true
+  readiness:
+    httpGet:
+      path: /index.html
+      port: 8000
+    initialDelaySeconds: 5
+    periodSeconds: 5
+    failureThreshold: 3
+    successThreshold: 1
+    timeoutSeconds: 5
+  liveness:
+    enabled: false
+    httpGet:
+      path: /index.html
+      port: 8000
+    initialDelaySeconds: 10
+    periodSeconds: 10
+    failureThreshold: 3
+    successThreshold: 1
+    timeoutSeconds: 5
+
+# Node selector
+nodeSelector:
+  enabled: true
+  key: homework
+  value: "true"
+
+# Volumes configuration
+volumes:
+  shared:
+    enabled: true
+    mountPath: /homework
+  config:
+    enabled: true
+    mountPath: /homework/conf
+
+# PersistentVolumeClaim
+pvc:
+  enabled: true
+  name: homework-pvc
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: homework-storageclass
+  size: 1Gi
+
+# StorageClass
+storageClass:
+  enabled: true
+  name: homework-storageclass
+  provisioner: k8s.io/minikube-hostpath
+  reclaimPolicy: Retain
+  volumeBindingMode: Immediate
+
+# ConfigMap
+configMap:
+  enabled: true
+  name: homework-config
+  data:
+    file: |
+      key1=value1
+      key2=value2
+      key3=value3
+      database_host=localhost
+      database_port=5432
+      app_name=homework-app
+      app_port=8000
+
+# Service
+service:
+  enabled: true
+  name: homework-service
+  type: ClusterIP
+  port: 8000
+  targetPort: 8000
+
+# Ingress
+ingress:
+  enabled: true
+  name: homework-ingress
+  className: nginx
+  host: homework.otus
+  path: /homepage
+  pathType: Exact
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /index.html
+
+# Labels
+labels:
+  app: homework
+
+# MySQL dependency
+mysql:
+  enabled: true
+  # Образы Bitnami MySQL перемещены в bitnamilegacy репозиторий (с августа 2025)
+  image:
+    registry: docker.io
+    repository: bitnamilegacy/mysql
+    tag: 9.4.0-debian-12-r1
+  auth:
+    rootPassword: rootpassword
+    database: homeworkdb
+    username: homeworkuser
+    password: homeworkpass
+  primary:
+    persistence:
+      enabled: true
+      size: 8Gi
