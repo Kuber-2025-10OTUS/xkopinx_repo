@@ -1,0 +1,23 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mysql-operator-custom
+  namespace: mysql-operator
+  labels:
+    app: mysql-operator-custom
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mysql-operator-custom
+  template:
+    metadata:
+      labels:
+        app: mysql-operator-custom
+    spec:
+      serviceAccountName: mysql-operator-custom
+      containers:
+        - name: operator
+          image: mysql-operator-custom:0.1.0
+          imagePullPolicy: IfNotPresent
