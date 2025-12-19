@@ -1,0 +1,11 @@
+---
+apiVersion: otus.homework/v1
+kind: MySQL
+metadata:
+  name: mysql-sample
+  namespace: mysql-operator
+spec:
+  image: mysql:8.0
+  database: app
+  password: supersecret
+  storage_size: 1Gi
