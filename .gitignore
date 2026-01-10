@@ -12,3 +12,14 @@ temp
 .DS_Store
 token
 *.bak
+
+# Kubernetes secrets (содержат чувствительные данные)
+# ВАЖНО: Если файлы уже отслеживаются Git, выполните:
+# git rm --cached kubernetes-logging/secret.yaml
+# git rm --cached kubernetes-logging/sa-key.json
+kubernetes-logging/secret.yaml
+kubernetes-logging/sa-key.json
+*.key.json
+*secret*.yaml
+**/secret*.yaml
+**/*-key.json
