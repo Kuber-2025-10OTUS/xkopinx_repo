@@ -1,0 +1,46 @@
+---
+# Конфигурация Grafana для установки на infra-ноды
+
+# Размещение ИСКЛЮЧИТЕЛЬНО на infra-нодах
+# ВАЖНО: Перед установкой добавьте метку на infra-ноду:
+# kubectl label node <имя-infra-ноды> node-role=infra
+nodeSelector:
+  node-role: infra
+
+# Toleration для taint node-role=infra (обязательно для работы на infra-нодах)
+tolerations:
+  - key: node-role
+    operator: Equal
+    value: infra
+    effect: NoSchedule
+
+# Настройка сервиса
+service:
+  type: ClusterIP
+  port: 80
+
+# Настройка администратора (по умолчанию admin/admin)
+adminUser: admin
+adminPassword: admin
+
+# Настройка persistence (опционально)
+persistence:
+  enabled: true
+  size: 10Gi
+  storageClassName: ""  # Используется default StorageClass
+
+# Настройка datasource для Loki (автоматическая настройка)
+# Для singleBinary режима используйте: http://loki.default.svc.cluster.local:3100
+# Для распределенного режима (через gateway): http://loki-gateway.default.svc.cluster.local:80
+datasources:
+  datasources.yaml:
+    apiVersion: 1
+    datasources:
+      - name: Loki
+        type: loki
+        access: proxy
+        # URL для singleBinary режима
+        url: http://loki.default.svc.cluster.local:3100
+        isDefault: true
+        jsonData:
+          maxLines: 1000
