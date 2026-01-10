@@ -163,8 +163,8 @@ yc iam access-key create \
    --format=json > sa-key.json
 ```
 
-- **AWS_ACCESS_KEY_ID** = значение поля `access_key.id` (в примере: `aje4rjpd1csvrpj4nn0v`)
-- **AWS_SECRET_ACCESS_KEY** = значение поля `secret` (в примере: `YCNrU40TzyKgZ-VtBqYMchOIpiCrTL50y8bERsLr`)
+- **AWS_ACCESS_KEY_ID** = значение поля `access_key.id`
+- **AWS_SECRET_ACCESS_KEY** = значение поля `secret`
 
 Эти значения уже указаны в файле [secret.yaml](./secret.yaml).
 

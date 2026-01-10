@@ -12,5 +12,3 @@ temp
 .DS_Store
 token
 *.bak
-secret.yaml
-sa-key.json
