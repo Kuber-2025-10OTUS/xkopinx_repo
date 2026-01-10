@@ -12,3 +12,7 @@ temp
 .DS_Store
 token
 *.bak
+
+# Kubernetes secrets (содержат чувствительные данные)
+kubernetes-logging/secret.yaml
+kubernetes-logging/sa-key.json
