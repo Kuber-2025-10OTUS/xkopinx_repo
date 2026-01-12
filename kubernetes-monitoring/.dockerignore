@@ -1,0 +1,5 @@
+README.md
+*.yaml
+*.yml
+.git
+.gitignore
