@@ -1,0 +1,81 @@
+---
+loki:
+  # Размещение ИСКЛЮЧИТЕЛЬНО на infra-нодах
+  # ВАЖНО: Перед установкой добавьте метку на infra-ноду:
+  # kubectl label node <имя-infra-ноды> node-role=infra
+  nodeSelector:
+    node-role: infra
+
+  # Toleration для taint node-role=infra (обязательно для работы на infra-нодах)
+  tolerations:
+    - key: node-role
+      operator: Equal
+      value: infra
+      effect: NoSchedule
+
+  # Подключение к Yandex Object Storage (S3)
+  storage:
+    type: s3
+    bucketNames:
+      chunks: otusloggingloki
+      ruler: otusloggingloki
+
+  s3:
+    endpoint: storage.yandexcloud.net
+    region: ru-central1
+    secretName: loki-s3-credentials
+    secretAccessKeyName: AWS_SECRET_ACCESS_KEY
+    accessKeyIdName: AWS_ACCESS_KEY_ID
+
+  # Минимальная конфигурация схемы для S3
+  schemaConfig:
+    configs:
+      - from: 2024-04-01
+        object_store: s3
+        store: tsdb
+        schema: v13
+        index:
+          prefix: index_
+          period: 24h
+
+  # Отключение аутентификации (по требованию задания)
+  auth_enabled: false
+
+  # Конфигурация для singleBinary режима (1 реплика)
+  commonConfig:
+    replication_factor: 1
+    # Отключаем memberlist для singleBinary режима, используем inmemory
+    ring:
+      kvstore:
+        store: inmemory
+
+# Режим развертывания: SingleBinary (одиночный режим)
+deploymentMode: SingleBinary
+
+# Одиночный режим
+singleBinary:
+  replicas: 1
+  # Размещение на infra-нодах (дублируем nodeSelector и toleration для singleBinary)
+  nodeSelector:
+    node-role: infra
+  tolerations:
+    - key: node-role
+      operator: Equal
+      value: infra
+      effect: NoSchedule
+
+# Обнуляем реплики других компонентов для singleBinary режима
+backend:
+  replicas: 0
+read:
+  replicas: 0
+write:
+  replicas: 0
+gateway:
+  replicas: 0
+
+# Отключаем кэши для singleBinary режима
+chunksCache:
+  enabled: false
+resultsCache:
+  enabled: false

@@ -1,0 +1,9 @@
+{
+  "access_key": {
+    "id": "<AWS_ACCESS_KEY_ID>",
+    "service_account_id": "<SERVICE_ACCOUNT_ID>",
+    "created_at": "<CREATED_AT>",
+    "key_id": "<KEY_ID>"
+  },
+  "secret": "<AWS_SECRET_ACCESS_KEY>"
+}

@@ -1,0 +1,60 @@
+---
+# Конфигурация Promtail для установки на все ноды кластера
+# Promtail устанавливается как DaemonSet
+
+# Toleration для работы на infra-нодах с taint node-role=infra
+tolerations:
+  - key: node-role
+    operator: Equal
+    value: infra
+    effect: NoSchedule
+
+# Настройка подключения к Loki
+config:
+  clients:
+    - url: http://loki.default.svc.cluster.local:3100/loki/api/v1/push
+
+  # Конфигурация для сбора логов из контейнеров
+  server:
+    http_listen_port: 3101
+    grpc_listen_port: 9096
+
+  positions:
+    filename: /tmp/positions.yaml
+
+  # Сбор логов из Kubernetes pods
+  # Конфигурация основана на стандартных примерах из документации Promtail:
+  # https://grafana.com/docs/loki/latest/send-data/promtail/configuration/
+  # Использует Kubernetes service discovery для автоматического обнаружения подов
+  scrape_configs:
+    - job_name: kubernetes-pods
+      kubernetes_sd_configs:
+        - role: pod
+      pipeline_stages:
+        - docker: {}
+      # Переименование меток для удобства запросов в Loki
+      relabel_configs:
+        # Извлечение основных меток: namespace, pod, container, node
+        - action: replace
+          source_labels:
+            - __meta_kubernetes_namespace
+          target_label: namespace
+        - action: replace
+          source_labels:
+            - __meta_kubernetes_pod_name
+          target_label: pod
+        - action: replace
+          source_labels:
+            - __meta_kubernetes_pod_container_name
+          target_label: container
+        - action: replace
+          source_labels:
+            - __meta_kubernetes_pod_node_name
+          target_label: node_name
+        # Указание пути к логам в формате /var/log/pods/<pod_uid>/<container_name>/*.log
+        - replacement: /var/log/pods/*$1/*.log
+          separator: /
+          source_labels:
+            - __meta_kubernetes_pod_uid
+            - __meta_kubernetes_pod_container_name
+          target_label: __path__
