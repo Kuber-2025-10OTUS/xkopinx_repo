@@ -1,0 +1,62 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: kubernetes-networks
+  namespace: argocd
+  # Финализатор для корректного удаления приложения
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  # Проект, к которому принадлежит приложение
+  project: otus
+
+  # Source - откуда брать манифесты
+  source:
+    # Git репозиторий
+    repoURL: https://github.com/Kuber-2025-10OTUS/xkopinx_repo.git
+    # Ветка
+    targetRevision: main
+    # Путь к директории с манифестами
+    path: kubernetes-networks
+
+  # Destination - куда деплоить
+  destination:
+    # Кластер (in-cluster)
+    server: https://kubernetes.default.svc
+    # Namespace для деплоя
+    namespace: homework
+
+  # Sync policy - политика синхронизации
+  syncPolicy:
+    # Manual sync - ручная синхронизация
+    # Закомментируем automated, чтобы была ручная синхронизация
+    # automated:
+    #   prune: false
+    #   selfHeal: false
+
+    # Опции синхронизации
+    syncOptions:
+      # Создать namespace, если его нет
+      - CreateNamespace=true
+      # Проверять ресурсы перед применением
+      - Validate=true
+      # Применять из корневой директории
+      - ApplyOutOfSyncOnly=false
+
+  # Настройки для игнорирования различий
+  ignoreDifferences:
+    # Игнорируем изменения в replicas (может быть изменено HPA)
+    - group: apps
+      kind: Deployment
+      jsonPointers:
+        - /spec/replicas
+
+  # Настройки для информации о приложении
+  info:
+    - name: Description
+      value: Application from kubernetes-networks homework
+    - name: Namespace
+      value: homework
+    - name: Sync Policy
+      value: Manual

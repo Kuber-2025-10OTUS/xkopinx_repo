@@ -1,0 +1,172 @@
+---
+# ArgoCD Helm Chart Values
+# Конфигурация для установки ArgoCD на инфраструктурные ноды
+
+# Глобальные настройки для всех компонентов ArgoCD
+global:
+  # Добавляем nodeSelector для планирования подов на infra-ноды
+  nodeSelector:
+    node-role: infra
+
+  # Добавляем toleration для обхода taint node-role=infra:NoSchedule
+  tolerations:
+    - key: "node-role"
+      operator: "Equal"
+      value: "infra"
+      effect: "NoSchedule"
+
+# Настройки для основного контроллера ArgoCD
+controller:
+  nodeSelector:
+    node-role: infra
+
+  tolerations:
+    - key: "node-role"
+      operator: "Equal"
+      value: "infra"
+      effect: "NoSchedule"
+
+  # Можно добавить affinity для более строгого контроля размещения
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+          - matchExpressions:
+              - key: node-role
+                operator: In
+                values:
+                  - infra
+
+# Настройки для Dex (OIDC provider)
+dex:
+  enabled: true
+
+  nodeSelector:
+    node-role: infra
+
+  tolerations:
+    - key: "node-role"
+      operator: "Equal"
+      value: "infra"
+      effect: "NoSchedule"
+
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+          - matchExpressions:
+              - key: node-role
+                operator: In
+                values:
+                  - infra
+
+# Настройки для Redis
+redis:
+  nodeSelector:
+    node-role: infra
+
+  tolerations:
+    - key: "node-role"
+      operator: "Equal"
+      value: "infra"
+      effect: "NoSchedule"
+
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+          - matchExpressions:
+              - key: node-role
+                operator: In
+                values:
+                  - infra
+
+# Настройки для ArgoCD Server (UI и API)
+server:
+  nodeSelector:
+    node-role: infra
+
+  tolerations:
+    - key: "node-role"
+      operator: "Equal"
+      value: "infra"
+      effect: "NoSchedule"
+
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+          - matchExpressions:
+              - key: node-role
+                operator: In
+                values:
+                  - infra
+
+  # Настройки для доступа к UI
+  service:
+    type: NodePort
+    nodePortHttp: 30080
+    nodePortHttps: 30443
+
+# Настройки для Repo Server
+repoServer:
+  nodeSelector:
+    node-role: infra
+
+  tolerations:
+    - key: "node-role"
+      operator: "Equal"
+      value: "infra"
+      effect: "NoSchedule"
+
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+          - matchExpressions:
+              - key: node-role
+                operator: In
+                values:
+                  - infra
+
+# Настройки для ApplicationSet Controller
+applicationSet:
+  nodeSelector:
+    node-role: infra
+
+  tolerations:
+    - key: "node-role"
+      operator: "Equal"
+      value: "infra"
+      effect: "NoSchedule"
+
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+          - matchExpressions:
+              - key: node-role
+                operator: In
+                values:
+                  - infra
+
+# Настройки для Notifications Controller
+notifications:
+  nodeSelector:
+    node-role: infra
+
+  tolerations:
+    - key: "node-role"
+      operator: "Equal"
+      value: "infra"
+      effect: "NoSchedule"
+
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+          - matchExpressions:
+              - key: node-role
+                operator: In
+                values:
+                  - infra
