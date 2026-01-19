@@ -1,0 +1,85 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: otus
+  namespace: argocd
+  # Финализатор предотвращает удаление проекта, если в нём есть приложения
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  # Описание проекта
+  description: OTUS Kubernetes Course Project
+
+  # Source-репозитории - откуда ArgoCD может деплоить приложения
+  sourceRepos:
+    - https://github.com/Kuber-2025-10OTUS/xkopinx_repo.git
+    # Helm репозитории для зависимостей
+    - https://charts.bitnami.com/bitnami
+    # Можно добавить дополнительные репозитории при необходимости
+    # - https://github.com/another-org/another-repo.git
+    # Или разрешить все репозитории (не рекомендуется для production)
+    # - '*'
+
+  # Destinations - куда ArgoCD может деплоить приложения
+  destinations:
+    # In-cluster - кластер, в котором установлен сам ArgoCD
+    - namespace: '*'
+      server: https://kubernetes.default.svc
+      # Альтернативный способ указания кластера через name
+      # name: in-cluster
+
+    # Можно добавить дополнительные кластеры
+    # - namespace: '*'
+    #   server: https://another-cluster-api-server
+
+  # Разрешения для cluster-scoped ресурсов
+  clusterResourceWhitelist:
+    # Разрешаем все ресурсы и все API группы
+    - group: '*'
+      kind: '*'
+    # Или можно ограничить конкретными ресурсами:
+    # - group: ''
+    #   kind: Namespace
+    # - group: 'rbac.authorization.k8s.io'
+    #   kind: ClusterRole
+    # - group: 'rbac.authorization.k8s.io'
+    #   kind: ClusterRoleBinding
+
+  # Разрешения для namespace-scoped ресурсов (необязательно, если используется clusterResourceWhitelist)
+  namespaceResourceWhitelist:
+    - group: '*'
+      kind: '*'
+
+  # Роли для управления доступом к проекту (опционально)
+  roles:
+    # Роль для администраторов проекта
+    - name: project-admin
+      description: Admin role for Kubernetes GitOps project
+      policies:
+        - p, proj:otus:project-admin, applications, *, otus/*, allow
+        - p, proj:otus:project-admin, repositories, *, otus/*, allow
+        - p, proj:otus:project-admin, clusters, *, otus/*, allow
+      # groups:
+      #   - otus-admins
+
+    # Роль для разработчиков (read-only)
+    - name: project-developer
+      description: Developer role for Kubernetes GitOps project
+      policies:
+        - p, proj:otus:project-developer, applications, get, otus/*, allow
+        - p, proj:otus:project-developer, applications, sync, otus/*, allow
+      # groups:
+      #   - otus-developers
+
+  # Окна синхронизации (опционально) - когда разрешена синхронизация
+  # syncWindows:
+  #   - kind: allow
+  #     schedule: '0 9 * * 1-5'  # С понедельника по пятницу в 9:00
+  #     duration: 8h
+  #     applications:
+  #       - '*'
+  #     namespaces:
+  #       - default
+  #     clusters:
+  #       - in-cluster

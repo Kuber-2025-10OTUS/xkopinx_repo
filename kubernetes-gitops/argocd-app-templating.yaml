@@ -1,0 +1,130 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: kubernetes-templating
+  namespace: argocd
+  # Финализатор для корректного удаления приложения
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  # Проект, к которому принадлежит приложение
+  project: otus
+
+  # Source - откуда брать манифесты (Helm chart)
+  source:
+    # Git репозиторий
+    repoURL: https://github.com/Kuber-2025-10OTUS/xkopinx_repo.git
+    # Ветка
+    targetRevision: main
+    # Путь к директории с Helm chart
+    path: kubernetes-templating
+
+    # Helm specific configuration
+    helm:
+      # Переопределение values
+      values: |
+        # Переопределяем namespace
+        namespace:
+          name: homeworkhelm
+          create: true
+
+        # Переопределяем количество реплик
+        deployment:
+          replicas: 2
+
+        # Отключаем MySQL для упрощения
+        mysql:
+          enabled: false
+
+        # Настройка StorageClass для Yandex Cloud
+        storageClass:
+          enabled: true
+          name: homework-storageclass
+          # Для Yandex Cloud используем yc-network-hdd или yc-network-ssd
+          provisioner: disk.csi.cloud.yandex.ru
+          reclaimPolicy: Retain
+          volumeBindingMode: WaitForFirstConsumer
+          parameters:
+            type: network-hdd
+            # Зона должна совпадать с зоной кластера
+            # csi.storage.k8s.io/fstype: ext4
+
+        # Настройка PVC
+        pvc:
+          enabled: true
+          name: homework-pvc
+          accessModes:
+            - ReadWriteOnce
+          storageClassName: homework-storageclass
+          size: 1Gi
+
+        # Отключаем nodeSelector для infra-нод
+        nodeSelector:
+          enabled: false
+
+      # Альтернативный способ - через параметры
+      parameters:
+        - name: deployment.replicas
+          value: "2"
+        - name: namespace.name
+          value: homeworkhelm
+
+      # Release name
+      releaseName: homework-helm
+
+      # Skip CRDs installation (если есть)
+      skipCrds: false
+
+  # Destination - куда деплоить
+  destination:
+    # Кластер (in-cluster)
+    server: https://kubernetes.default.svc
+    # Namespace для деплоя
+    namespace: homeworkhelm
+
+  # Sync policy - политика синхронизации
+  syncPolicy:
+    # Автоматическая синхронизация
+    automated:
+      # Prune - удалять ресурсы, которых нет в Git
+      prune: true
+      # SelfHeal - автоматически восстанавливать при изменениях в кластере
+      selfHeal: true
+      # Разрешить пустые ресурсы
+      allowEmpty: false
+
+    # Опции синхронизации
+    syncOptions:
+      # Создать namespace, если его нет
+      - CreateNamespace=true
+      # Проверять ресурсы перед применением
+      - Validate=true
+      # Применять из корневой директории
+      - ApplyOutOfSyncOnly=false
+      # Для Helm - использовать server-side apply
+      - ServerSideApply=false
+
+    # Retry strategy - стратегия повторных попыток при ошибках
+    retry:
+      # Количество попыток
+      limit: 5
+      # Backoff - задержка между попытками
+      backoff:
+        # Начальная задержка
+        duration: 5s
+        # Коэффициент увеличения задержки
+        factor: 2
+        # Максимальная задержка
+        maxDuration: 3m
+
+  # Настройки для информации о приложении
+  info:
+    - name: Description
+      value: Helm chart from kubernetes-templating homework
+    - name: Namespace
+      value: homeworkhelm
+    - name: Sync Policy
+      value: Auto (Prune=true, SelfHeal=true)
+    - name: Replicas
+      value: "2"
