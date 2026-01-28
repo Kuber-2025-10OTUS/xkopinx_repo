@@ -1,0 +1,12 @@
+# Vault sensitive files
+vault-init-keys.json
+*.json
+
+# Temporary files
+/tmp/
+*.tmp
+*.log
+
+# Backup files
+*.bak
+*~
