@@ -1,0 +1,34 @@
+---
+# Consul values for HA installation with 3 replicas
+global:
+  name: consul
+  datacenter: dc1
+
+server:
+  enabled: true
+  replicas: 3
+  bootstrapExpect: 3
+  storage: 10Gi
+  storageClass: null
+  resources:
+    requests:
+      memory: "256Mi"
+      cpu: "250m"
+    limits:
+      memory: "512Mi"
+      cpu: "500m"
+
+client:
+  enabled: true
+  grpc: true
+
+ui:
+  enabled: true
+  service:
+    type: ClusterIP
+
+connectInject:
+  enabled: false
+
+dns:
+  enabled: true

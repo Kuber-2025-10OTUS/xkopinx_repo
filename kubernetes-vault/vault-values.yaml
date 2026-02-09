@@ -1,0 +1,58 @@
+---
+# Vault values for HA installation with Consul backend
+global:
+  enabled: true
+
+server:
+  enabled: true
+
+  # HA mode with 3 replicas
+  ha:
+    enabled: true
+    replicas: 3
+
+    # Consul storage backend configuration
+    config: |
+      ui = true
+
+      listener "tcp" {
+        tls_disable = 1
+        address = "[::]:8200"
+        cluster_address = "[::]:8201"
+      }
+
+      storage "consul" {
+        path = "vault/"
+        address = "consul-server.consul.svc.cluster.local:8500"
+      }
+
+      service_registration "kubernetes" {}
+
+  # Resources
+  resources:
+    requests:
+      memory: 256Mi
+      cpu: 250m
+    limits:
+      memory: 512Mi
+      cpu: 500m
+
+  # Service configuration
+  service:
+    enabled: true
+    type: ClusterIP
+    port: 8200
+    targetPort: 8200
+
+  # Data storage (not used with Consul backend, but required)
+  dataStorage:
+    enabled: false
+
+# UI configuration
+ui:
+  enabled: true
+  serviceType: ClusterIP
+
+# Injector configuration (optional, can be disabled)
+injector:
+  enabled: false
