@@ -1,0 +1,15 @@
+---
+# Auto-provisioning: указан storageClassName, volumeName нет — provisioner (CSI S3)
+# создаёт бакет в S3 и PV автоматически при создании PVC; при удалении PVC — удаляет.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: csi-s3-pvc
+  namespace: default
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 5Gi
+  storageClassName: csi-s3

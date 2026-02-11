@@ -1,0 +1,42 @@
+---
+# Deployment записывает файлы в примонтированный S3 volume.
+# Точка монтирования: /data/s3-otus
+# После запуска пода можно проверить запись в Object Storage:
+#   kubectl exec -it deployment/csi-s3-app -- ls -la /data/s3-otus
+#   kubectl exec -it deployment/csi-s3-app -- cat /data/s3-otus/hello.txt
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: csi-s3-app
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: csi-s3-app
+  template:
+    metadata:
+      labels:
+        app: csi-s3-app
+    spec:
+      containers:
+        - name: app
+          image: busybox:1.36
+          command:
+            - /bin/sh
+            - -c
+            - |
+              echo "Hello from pod at $(date)" > /data/s3-otus/hello.txt
+              echo "Pod name: $(hostname)" >> /data/s3-otus/hello.txt
+              while true; do
+                echo "$(date -Iseconds) heartbeat" >> /data/s3-otus/heartbeat.log
+                sleep 60
+              done
+          volumeMounts:
+            - name: s3-data
+              mountPath: /data/s3-otus
+      volumes:
+        - name: s3-data
+          persistentVolumeClaim:
+            claimName: csi-s3-pvc
+            readOnly: false
