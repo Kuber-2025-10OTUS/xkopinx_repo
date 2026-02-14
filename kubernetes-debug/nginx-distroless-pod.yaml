@@ -1,0 +1,28 @@
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx-distroless
+  labels:
+    app: nginx-distroless
+spec:
+  shareProcessNamespace: true  # нужен для доступа эфемерного контейнера к PID namespace основного
+  containers:
+    - name: nginx
+      image: kyos0109/nginx-distroless
+      ports:
+        - containerPort: 80
+          name: http
+---
+# Service, чтобы по имени nginx-distroless.default.svc.cluster.local можно было ходить из других подов
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-distroless
+spec:
+  selector:
+    app: nginx-distroless
+  ports:
+    - port: 80
+      targetPort: 80
+      name: http
