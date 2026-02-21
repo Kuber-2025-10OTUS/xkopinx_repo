@@ -2,12 +2,12 @@
 
 ## Окружение
 
-| Узел      | IP-адрес      | Роль    |
-|-----------|---------------|---------|
+| Узел      | IP-адрес       | Роль          |
+|-----------|----------------|---------------|
 | master    | 192.168.177.56 | control-plane |
-| worker-1  | 192.168.177.44 | worker  |
-| worker-2  | 192.168.177.70 | worker  |
-| worker-3  | 192.168.177.51 | worker  |
+| worker-1  | 192.168.177.44 | worker        |
+| worker-2  | 192.168.177.70 | worker        |
+| worker-3  | 192.168.177.51 | worker        |
 
 **Версии Kubernetes:**  
 
@@ -481,3 +481,125 @@ worker-1      Ready    <none>          118m   v1.35.1   192.168.177.44   <none> 
 worker-2      Ready    <none>          117m   v1.35.1   192.168.177.70   <none>        Ubuntu 24.04.3 LTS   6.8.0-90-generic    containerd://2.2.1
 worker-3      Ready    <none>          117m   v1.35.1   192.168.177.51   <none>        Ubuntu 24.04.3 LTS   6.8.0-90-generic    containerd://2.2.1
 ```
+
+---
+
+## Задание со звёздочкой: отказоустойчивый кластер с Kubespray
+
+Развернуть отказоустойчивый кластер Kubernetes с помощью **Kubespray**: 3 master-ноды, минимум 2 worker-ноды.
+
+**К результатам приложить:** inventory-файл, использованный для создания кластера, и вывод команды `kubectl get nodes -o wide`.
+
+---
+
+## Окружение (HA-кластер)
+
+| Узел          | IP-адрес        | Роль                |
+|---------------|-----------------|---------------------|
+| master-node-1 | 192.168.177.56  | control-plane, etcd |
+| master-node-2 | 192.168.177.51  | control-plane, etcd |
+| master-node-3 | 192.168.177.136 | control-plane, etcd |
+| worker-1      | 192.168.177.44  | worker              |
+| worker-2      | 192.168.177.69  | worker              |
+
+Требования к узлам: отключён swap, SSH по ключу с deploy-машины, **sudo без пароля** для пользователя, под которым запускается Ansible, иначе playbook завершается с ошибкой `Missing sudo password`).
+
+**Вариант 1 — passwordless sudo :** на **каждом** узле (master-node-1, master-node-2, master-node-3, worker-1, worker-2), в моём случае это `user1`:
+
+```bash
+echo 'user1 ALL=(ALL) NOPASSWD:ALL' | sudo tee /etc/sudoers.d/user1
+sudo chmod 440 /etc/sudoers.d/user1
+```
+
+**Вариант 2 — запрос пароля sudo при запуске:** если NOPASSWD настроить нельзя, запускать playbook с флагом `-K`, Ansible запросит BECOME password:
+
+```bash
+ansible-playbook -i inventory/mycluster/inventory.ini cluster.yml -b -u user1 -K
+```
+
+---
+
+### 1. Подготовка машины с Ansible
+
+Kubespray запускается с отдельной машины (ноутбук, CI-сервер или одна из VM), с которой есть SSH-доступ ко всем узлам кластера.
+
+#### 1.1. Клонирование Kubespray и установка зависимостей
+
+```bash
+# Создание виртуального окружения
+python3 -m venv .venv
+source .venv/bin/activate
+# Клонирование Kubespray
+git clone https://github.com/kubernetes-sigs/kubespray.git
+# Установка Kubespray
+cd kubespray
+# Переключение на релиз 2.30 (https://github.com/kubernetes-sigs/kubespray/tree/release-2.30)
+git checkout v2.30.0
+# Установка зависимостей
+pip install -r requirements.txt
+```
+
+#### 1.2. Создание inventory
+
+В [release-2.30](https://github.com/kubernetes-sigs/kubespray/tree/release-2.30) в качестве образца используется формат **inventory.ini** (INI). Копируем пример и правим inventory:
+
+```bash
+cp -r inventory/sample inventory/mycluster
+```
+
+Редактируем `inventory/mycluster/inventory.ini`. Пример для 3 master (stacked etcd) и 2 worker с нашими IP:
+
+```ini
+[kube_control_plane]
+master-node-1 ansible_host=192.168.177.56 ip=192.168.177.56 etcd_member_name=etcd1
+master-node-2 ansible_host=192.168.177.51 ip=192.168.177.51 etcd_member_name=etcd2
+master-node-3 ansible_host=192.168.177.136 ip=192.168.177.136 etcd_member_name=etcd3
+
+[etcd:children]
+kube_control_plane
+
+[kube_node]
+worker-1 ansible_host=192.168.177.44 ip=192.168.177.44
+worker-2 ansible_host=192.168.177.69 ip=192.168.177.69
+```
+
+Либо готовый файл для этого окружения: `kubernetes-prod/kubespray-inventory.ini` в репозитории — скопировать в `inventory/mycluster/inventory.ini`.
+
+#### 1.3. Проверка доступности узлов
+
+```bash
+ansible -i inventory/mycluster/inventory.ini all -m ping -u user1
+```
+
+---
+
+### 2. Запуск развёртывания кластера
+
+При настроенном passwordless sudo для `user1` на всех узлах:
+
+```bash
+ansible-playbook -i inventory/mycluster/inventory.ini cluster.yml -b -u user1 -K
+```
+
+---
+
+### 3. Доступ к кластеру и проверка, например, на master-node-1
+
+```bash
+mkdir -p $HOME/.kube
+sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+sudo chown $(id -u):$(id -g) $HOME/.kube/config
+```
+
+Вывод команды `kubectl get nodes -o wide` на master-node-1:
+
+```text
+NAME            STATUS   ROLES           AGE     VERSION   INTERNAL-IP       EXTERNAL-IP   OS-IMAGE             KERNEL-VERSION     CONTAINER-RUNTIME
+master-node-1   Ready    control-plane   6m22s   v1.34.3   192.168.177.56    <none>        Ubuntu 24.04.3 LTS   6.8.0-90-generic   containerd://2.2.1
+master-node-2   Ready    control-plane   6m6s    v1.34.3   192.168.177.51    <none>        Ubuntu 24.04.3 LTS   6.8.0-90-generic   containerd://2.2.1
+master-node-3   Ready    control-plane   6m1s    v1.34.3   192.168.177.136   <none>        Ubuntu 24.04.3 LTS   6.8.0-90-generic   containerd://2.2.1
+worker-1        Ready    <none>          5m35s   v1.34.3   192.168.177.44    <none>        Ubuntu 24.04.3 LTS   6.8.0-90-generic   containerd://2.2.1
+worker-2        Ready    <none>          5m35s   v1.34.3   192.168.177.69    <none>        Ubuntu 24.04.3 LTS   6.8.0-90-generic   containerd://2.2.1
+```
+
+Файл inventory, который использовался для создания кластера, `kubernetes-prod/kubespray-inventory.ini` в репозитории.
